@@ -22,9 +22,6 @@ makeMyTrip/*.class
 makeMyTrip/*.jar
 makeMyTrip/*.war
 
-# Database properties (Atlas Credentials)
-makeMyTrip/src/main/resources/application.properties
-
 # OS files
 .DS_Store
 Thumbs.db
