@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Hotel, MapPin, ShieldAlert, CheckCircle, Bed, Sparkles } from "lucide-react";
+import { Hotel, MapPin, ShieldAlert, CheckCircle, Bed, Sparkles, Search } from "lucide-react";
 
 interface HotelData {
   id: string;
@@ -25,6 +25,9 @@ export default function HotelPage() {
   const [hotels, setHotels] = useState<HotelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Search filter
+  const [searchLocation, setSearchLocation] = useState("");
 
   // Booking state
   const [selectedHotel, setSelectedHotel] = useState<HotelData | null>(null);
@@ -84,12 +87,31 @@ export default function HotelPage() {
     }
   };
 
+  // Filter hotels based on search location
+  const filteredHotels = hotels.filter((hotel) =>
+    hotel.location.toLowerCase().includes(searchLocation.toLowerCase())
+  );
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <Hotel className="h-8 w-8 text-indigo-600" />
-        Recommended Hotels
-      </h1>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Hotel className="h-8 w-8 text-indigo-600" />
+          Recommended Hotels
+        </h1>
+
+        {/* Search Input Widget */}
+        <div className="flex items-center gap-2 bg-white p-3 rounded-xl shadow-sm border w-full md:max-w-md px-4">
+          <Search className="h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by city or location..."
+            value={searchLocation}
+            onChange={(e) => setSearchLocation(e.target.value)}
+            className="bg-transparent border-0 outline-none text-sm w-full placeholder:text-slate-400"
+          />
+        </div>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -99,11 +121,13 @@ export default function HotelPage() {
         </div>
       ) : error ? (
         <div className="text-center py-12 text-red-600">{error}</div>
-      ) : hotels.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">No hotels found. Add hotels through Admin panel!</div>
+      ) : filteredHotels.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground bg-white rounded-xl shadow-sm border p-6">
+          No hotels found matching your search location.
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {hotels.map((hotel) => (
+          {filteredHotels.map((hotel) => (
             <Card key={hotel.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-bold flex items-center justify-between">

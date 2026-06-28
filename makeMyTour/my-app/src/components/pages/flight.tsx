@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, Clock, ShieldAlert, CheckCircle } from "lucide-react";
+import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin } from "lucide-react";
 
 interface Flight {
   id: string;
@@ -28,6 +28,10 @@ export default function FlightPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
+  // Search inputs
+  const [searchFrom, setSearchFrom] = useState("");
+  const [searchTo, setSearchTo] = useState("");
+
   // Booking state
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
   const [seats, setSeats] = useState(1);
@@ -39,8 +43,6 @@ export default function FlightPage() {
     setLoading(true);
     try {
       const response = await getFlights();
-      // Backend model has getId() mapping to _id.
-      // Let's normalize it to ensure id works.
       const normalizedFlights = (response.data || []).map((f: any) => ({
         ...f,
         id: f.id || f._id
@@ -87,12 +89,45 @@ export default function FlightPage() {
     }
   };
 
+  // Filter flights list based on search parameters
+  const filteredFlights = flights.filter((flight) => {
+    const matchesFrom = flight.from.toLowerCase().includes(searchFrom.toLowerCase());
+    const matchesTo = flight.to.toLowerCase().includes(searchTo.toLowerCase());
+    return matchesFrom && matchesTo;
+  });
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <Plane className="h-8 w-8 text-blue-600" />
-        Available Flights
-      </h1>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Plane className="h-8 w-8 text-blue-600" />
+          Available Flights
+        </h1>
+
+        {/* Search Bar Widget */}
+        <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-xl shadow-sm border w-full md:max-w-xl">
+          <div className="flex-1 flex items-center gap-2 px-2 border-b sm:border-b-0 sm:border-r pb-2 sm:pb-0">
+            <MapPin className="h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="From (e.g. Delhi)"
+              value={searchFrom}
+              onChange={(e) => setSearchFrom(e.target.value)}
+              className="bg-transparent border-0 outline-none text-sm w-full placeholder:text-slate-400"
+            />
+          </div>
+          <div className="flex-1 flex items-center gap-2 px-2">
+            <MapPin className="h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="To (e.g. Mumbai)"
+              value={searchTo}
+              onChange={(e) => setSearchTo(e.target.value)}
+              className="bg-transparent border-0 outline-none text-sm w-full placeholder:text-slate-400"
+            />
+          </div>
+        </div>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -102,11 +137,13 @@ export default function FlightPage() {
         </div>
       ) : error ? (
         <div className="text-center py-12 text-red-600">{error}</div>
-      ) : flights.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">No flights found. Add flights through Admin panel!</div>
+      ) : filteredFlights.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground bg-white rounded-xl shadow-sm border p-6">
+          No flights match your search query. Try clearing your search parameters!
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {flights.map((flight) => (
+          {filteredFlights.map((flight) => (
             <Card key={flight.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-bold flex items-center justify-between">
