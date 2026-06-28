@@ -9,9 +9,11 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/users")
-@CrossOrigin( origins = "*") // Allow requests from any origin
+@CrossOrigin(origins = "http://localhost:3000") // Allow requests from Next.js frontend
 public class UserController {
     @Autowired
     private UserServices userServices;
@@ -31,13 +33,24 @@ public class UserController {
 
 
     @PostMapping("/login")
-    public Users login(@RequestParam String email, @RequestParam String password) {
-        return userServices.login(email, password);
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
+        String email = loginData.get("email");
+        String password = loginData.get("password");
+        Users user = userServices.login(email, password);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid email or password"));
+        }
     }
 
     @PostMapping( "/signup")
-    public ResponseEntity<Users> signup(@RequestBody Users user) {
-        return ResponseEntity.ok(userServices.signup(user));
+    public ResponseEntity<?> signup(@RequestBody Users user) {
+        try {
+            return ResponseEntity.ok(userServices.signup(user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/email")

@@ -1,1 +1,30 @@
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node / Next.js dependencies and builds
+**/node_modules/
+**/npm-debug.log*
+**/.next/
+**/out/
+**/build/
+
+# Java / Spring Boot build artifacts
+makeMyTrip/target/
+makeMyTrip/.mvn/
+makeMyTrip/*.class
+makeMyTrip/*.jar
+makeMyTrip/*.war
+
+# Database properties (Atlas Credentials)
 makeMyTrip/src/main/resources/application.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

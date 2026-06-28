@@ -14,6 +14,10 @@ public class Hotel {
 
     //getters and setters
 
+    public String getId() {
+        return _id;
+    }
+
     public void setId(String id) {
         this._id = id;
     }
@@ -22,15 +26,15 @@ public class Hotel {
         this.amenities = amenities;
     }
 
-    public String getamenities() {
+    public String getAmenities() {
         return amenities;
     }
 
-    public String gethotelName() {
+    public String getHotelName() {
         return hotelName;
     }
 
-    public void sethotelName(String hotelName) {
+    public void setHotelName(String hotelName) {
         this.hotelName = hotelName;
     }
 
