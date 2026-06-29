@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Flight {
   id: string;
@@ -24,6 +25,7 @@ interface Flight {
 
 export default function FlightPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -99,31 +101,31 @@ export default function FlightPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Plane className="h-8 w-8 text-blue-600" />
+        <h1 className="text-3xl font-extrabold flex items-center gap-2 text-white">
+          <Plane className="h-8 w-8 text-sky-400" />
           Available Flights
         </h1>
 
-        {/* Search Bar Widget */}
-        <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-xl shadow-sm border w-full md:max-w-xl">
-          <div className="flex-1 flex items-center gap-2 px-2 border-b sm:border-b-0 sm:border-r pb-2 sm:pb-0">
-            <MapPin className="h-4 w-4 text-slate-400" />
+        {/* Search Bar Widget (Calm & simple dark-glass style) */}
+        <div className="flex flex-col sm:flex-row gap-3 bg-black/60 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-700/40 w-full md:max-w-xl">
+          <div className="flex-1 flex items-center gap-2 px-2 border-b border-slate-700/40 sm:border-b-0 sm:border-r pb-2 sm:pb-0">
+            <MapPin className="h-4 w-4 text-sky-400" />
             <input
               type="text"
               placeholder="From (e.g. Delhi)"
               value={searchFrom}
               onChange={(e) => setSearchFrom(e.target.value)}
-              className="bg-transparent border-0 outline-none text-sm w-full placeholder:text-slate-400"
+              className="bg-transparent border-0 outline-none text-sm text-white w-full placeholder:text-slate-400"
             />
           </div>
           <div className="flex-1 flex items-center gap-2 px-2">
-            <MapPin className="h-4 w-4 text-slate-400" />
+            <MapPin className="h-4 w-4 text-sky-400" />
             <input
               type="text"
               placeholder="To (e.g. Mumbai)"
               value={searchTo}
               onChange={(e) => setSearchTo(e.target.value)}
-              className="bg-transparent border-0 outline-none text-sm w-full placeholder:text-slate-400"
+              className="bg-transparent border-0 outline-none text-sm text-white w-full placeholder:text-slate-400"
             />
           </div>
         </div>
@@ -132,41 +134,42 @@ export default function FlightPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((n) => (
-            <Card key={n} className="animate-pulse h-48 bg-slate-100" />
+            <Card key={n} className="animate-pulse h-48 bg-black/40 border-slate-800" />
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-12 text-red-600">{error}</div>
+        <div className="text-center py-12 text-red-400 font-semibold">{error}</div>
       ) : filteredFlights.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground bg-white rounded-xl shadow-sm border p-6">
+        <div className="text-center py-12 text-slate-300 bg-black/60 border border-slate-700/40 rounded-xl shadow-lg p-6">
           No flights match your search query. Try clearing your search parameters!
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredFlights.map((flight) => (
-            <Card key={flight.id} className="hover:shadow-md transition-shadow">
+            <Card key={flight.id} className="bg-black/60 backdrop-blur-md border border-slate-700/40 hover:border-sky-500/40 transition-all duration-300 text-white shadow-xl hover:shadow-2xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-bold flex items-center justify-between">
+                <CardTitle className="text-xl font-bold flex items-center justify-between text-white">
                   <span>{flight.flightName}</span>
-                  <span className="text-emerald-600 font-extrabold text-lg">₹{flight.price}</span>
+                  <span className="text-sky-400 font-extrabold text-lg">₹{flight.price}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center text-sm font-medium text-slate-700 bg-slate-50 p-2 rounded-lg">
+                <div className="flex justify-between items-center text-sm font-medium text-white bg-slate-800/40 border border-slate-700/40 p-2.5 rounded-lg">
                   <div>
-                    <span className="text-xs text-muted-foreground block">FROM</span>
+                    <span className="text-[10px] text-slate-400 font-bold block">FROM</span>
                     {flight.from}
                   </div>
-                  <Plane className="h-4 w-4 text-blue-500 transform rotate-90" />
+                  {/* Plane logo points to the right corner (natural 45-degree angle) */}
+                  <Plane className="h-4 w-4 text-sky-400" />
                   <div className="text-right">
-                    <span className="text-xs text-muted-foreground block">TO</span>
+                    <span className="text-[10px] text-slate-400 font-bold block">TO</span>
                     {flight.to}
                   </div>
                 </div>
 
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-xs text-slate-300">
                   <div className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
+                    <Clock className="h-3.5 w-3.5 text-sky-400" />
                     <span>Dep: {flight.departureTime}</span>
                   </div>
                   <div>
@@ -174,14 +177,15 @@ export default function FlightPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-xs text-slate-500 font-semibold">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-700/40">
+                  <span className="text-xs text-slate-300 font-semibold">
                     {flight.availableSeats} seats left
                   </span>
                   <Button 
                     size="sm" 
                     onClick={() => openBookingModal(flight)}
                     disabled={flight.availableSeats <= 0}
+                    className="bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors"
                   >
                     {flight.availableSeats <= 0 ? "Sold Out" : "Book Now"}
                   </Button>
@@ -194,55 +198,66 @@ export default function FlightPage() {
 
       {/* Booking Dialog */}
       <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 border border-slate-700 text-white">
           <DialogHeader>
-            <DialogTitle>Confirm Flight Booking</DialogTitle>
+            <DialogTitle className="text-white">Confirm Flight Booking</DialogTitle>
           </DialogHeader>
 
           {!user ? (
             <div className="py-6 flex flex-col items-center text-center gap-2">
-              <ShieldAlert className="h-12 w-12 text-amber-500" />
-              <p className="font-semibold">Login Required</p>
-              <p className="text-sm text-muted-foreground">You must be logged in to book a flight.</p>
-              <Button className="mt-4" onClick={() => window.location.href="/login"}>Login Now</Button>
+              <ShieldAlert className="h-12 w-12 text-sky-400" />
+              <p className="font-semibold text-white">Login Required</p>
+              <p className="text-sm text-slate-300">You must be logged in to book a flight.</p>
+              <Button className="mt-4 bg-sky-500 hover:bg-sky-600" onClick={() => router.push("/login")}>Login Now</Button>
             </div>
           ) : bookingSuccess ? (
             <div className="py-6 flex flex-col items-center text-center gap-2">
-              <CheckCircle className="h-12 w-12 text-emerald-500 animate-bounce" />
-              <p className="font-bold text-lg text-emerald-600">Booking Confirmed!</p>
-              <p className="text-sm text-muted-foreground">Enjoy your trip with {selectedFlight?.flightName}.</p>
+              <CheckCircle className="h-12 w-12 text-sky-400 animate-bounce" />
+              <p className="font-bold text-lg text-sky-400">Flight Booked Successfully!</p>
+              <p className="text-sm text-slate-300">Your reservation has been confirmed.</p>
             </div>
           ) : (
             selectedFlight && (
               <div className="space-y-4 py-4">
-                <div className="bg-slate-50 p-4 rounded-lg space-y-1">
-                  <p className="font-bold">{selectedFlight.flightName}</p>
-                  <p className="text-sm text-muted-foreground">{selectedFlight.from} → {selectedFlight.to}</p>
-                  <p className="text-sm text-muted-foreground">Departure: {selectedFlight.departureTime}</p>
+                <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-lg space-y-1">
+                  <p className="font-bold text-white">{selectedFlight.flightName}</p>
+                  <p className="text-sm text-slate-300">Route: {selectedFlight.from} ➔ {selectedFlight.to}</p>
+                  <p className="text-sm text-slate-300">Departure: {selectedFlight.departureTime}</p>
+                  <p className="text-sm text-slate-300">Base Price: ₹{selectedFlight.price} per seat</p>
                 </div>
 
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="seats">Number of Seats</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="seats" className="text-white">Number of Seats</Label>
                   <Input
-                    type="number"
                     id="seats"
+                    type="number"
                     min={1}
                     max={selectedFlight.availableSeats}
                     value={seats}
-                    onChange={(e) => setSeats(Math.max(1, Math.min(selectedFlight.availableSeats, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => setSeats(Math.min(selectedFlight.availableSeats, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="bg-slate-900 border-slate-700 text-white"
                   />
-                  <p className="text-xs text-muted-foreground">Max available: {selectedFlight.availableSeats}</p>
                 </div>
 
-                <div className="flex justify-between items-center font-bold text-lg pt-4 border-t">
-                  <span>Total Cost</span>
-                  <span className="text-emerald-600">₹{selectedFlight.price * seats}</span>
+                <div className="flex justify-between items-center pt-2 font-bold text-lg text-white">
+                  <span>Total Price:</span>
+                  <span className="text-sky-400">₹{selectedFlight.price * seats}</span>
                 </div>
 
-                <DialogFooter className="pt-4">
-                  <Button variant="ghost" onClick={() => setBookingDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleBooking} disabled={bookingLoading}>
-                    {bookingLoading ? "Confirming..." : "Confirm Booking"}
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setBookingDialogOpen(false)}
+                    className="text-slate-300 hover:text-white hover:bg-slate-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleBooking}
+                    disabled={bookingLoading}
+                    className="bg-sky-500 hover:bg-sky-600 text-white"
+                  >
+                    {bookingLoading ? "Processing..." : "Confirm Booking"}
                   </Button>
                 </DialogFooter>
               </div>

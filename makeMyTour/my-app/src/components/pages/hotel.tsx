@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Hotel, MapPin, ShieldAlert, CheckCircle, Bed, Sparkles, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface HotelData {
   id: string;
@@ -22,6 +23,7 @@ interface HotelData {
 
 export default function HotelPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [hotels, setHotels] = useState<HotelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -95,20 +97,20 @@ export default function HotelPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Hotel className="h-8 w-8 text-indigo-600" />
+        <h1 className="text-3xl font-extrabold flex items-center gap-2 text-white">
+          <Hotel className="h-8 w-8 text-sky-400" />
           Recommended Hotels
         </h1>
 
-        {/* Search Input Widget */}
-        <div className="flex items-center gap-2 bg-white p-3 rounded-xl shadow-sm border w-full md:max-w-md px-4">
-          <Search className="h-4 w-4 text-slate-400" />
+        {/* Search Input Widget (Calm & simple dark-glass style) */}
+        <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md p-3 rounded-xl border border-slate-700/40 w-full md:max-w-md px-4 shadow-lg">
+          <Search className="h-4 w-4 text-sky-400" />
           <input
             type="text"
             placeholder="Search by city or location..."
             value={searchLocation}
             onChange={(e) => setSearchLocation(e.target.value)}
-            className="bg-transparent border-0 outline-none text-sm w-full placeholder:text-slate-400"
+            className="bg-transparent border-0 outline-none text-sm text-white w-full placeholder:text-slate-400"
           />
         </div>
       </div>
@@ -116,35 +118,35 @@ export default function HotelPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((n) => (
-            <Card key={n} className="animate-pulse h-48 bg-slate-100" />
+            <Card key={n} className="animate-pulse h-48 bg-black/40 border-slate-800" />
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-12 text-red-600">{error}</div>
+        <div className="text-center py-12 text-red-400 font-semibold">{error}</div>
       ) : filteredHotels.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground bg-white rounded-xl shadow-sm border p-6">
+        <div className="text-center py-12 text-slate-300 bg-black/60 border border-slate-700/40 rounded-xl shadow-lg p-6">
           No hotels found matching your search location.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredHotels.map((hotel) => (
-            <Card key={hotel.id} className="hover:shadow-md transition-shadow">
+            <Card key={hotel.id} className="bg-black/60 backdrop-blur-md border border-slate-700/40 hover:border-sky-500/40 transition-all duration-300 text-white shadow-xl hover:shadow-2xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-bold flex items-center justify-between">
+                <CardTitle className="text-xl font-bold flex items-center justify-between text-white">
                   <span>{hotel.hotelName}</span>
-                  <span className="text-emerald-600 font-extrabold text-lg">₹{hotel.pricePerNight}/night</span>
+                  <span className="text-sky-400 font-extrabold text-lg">₹{hotel.pricePerNight}/night</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                  <MapPin className="h-4 w-4 text-red-500" />
+                <div className="flex items-center gap-1.5 text-sm text-slate-200">
+                  <MapPin className="h-4 w-4 text-sky-400" />
                   <span>{hotel.location}</span>
                 </div>
 
                 {hotel.amenities && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {hotel.amenities.split(",").map((amenity, idx) => (
-                      <span key={idx} className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <span key={idx} className="text-[10px] bg-slate-850 border border-slate-700/60 text-sky-400 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
                         <Sparkles className="h-3 w-3" />
                         {amenity.trim()}
                       </span>
@@ -152,15 +154,16 @@ export default function HotelPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
-                    <Bed className="h-3.5 w-3.5" />
+                <div className="flex items-center justify-between pt-4 border-t border-slate-700/40">
+                  <span className="text-xs text-slate-300 font-semibold flex items-center gap-1">
+                    <Bed className="h-3.5 w-3.5 text-sky-400" />
                     {hotel.availableRooms} rooms left
                   </span>
                   <Button 
                     size="sm" 
                     onClick={() => openBookingModal(hotel)}
                     disabled={hotel.availableRooms <= 0}
+                    className="bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors"
                   >
                     {hotel.availableRooms <= 0 ? "No Rooms" : "Book Now"}
                   </Button>
@@ -173,55 +176,65 @@ export default function HotelPage() {
 
       {/* Booking Dialog */}
       <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 border border-slate-700 text-white">
           <DialogHeader>
-            <DialogTitle>Confirm Hotel Booking</DialogTitle>
+            <DialogTitle className="text-white">Confirm Hotel Booking</DialogTitle>
           </DialogHeader>
 
           {!user ? (
             <div className="py-6 flex flex-col items-center text-center gap-2">
-              <ShieldAlert className="h-12 w-12 text-amber-500" />
-              <p className="font-semibold">Login Required</p>
-              <p className="text-sm text-muted-foreground">You must be logged in to book a hotel.</p>
-              <Button className="mt-4" onClick={() => window.location.href="/login"}>Login Now</Button>
+              <ShieldAlert className="h-12 w-12 text-sky-400" />
+              <p className="font-semibold text-white">Login Required</p>
+              <p className="text-sm text-slate-300">You must be logged in to book a hotel.</p>
+              <Button className="mt-4 bg-sky-500 hover:bg-sky-600" onClick={() => router.push("/login")}>Login Now</Button>
             </div>
           ) : bookingSuccess ? (
             <div className="py-6 flex flex-col items-center text-center gap-2">
-              <CheckCircle className="h-12 w-12 text-emerald-500 animate-bounce" />
-              <p className="font-bold text-lg text-emerald-600">Hotel Booked Successfully!</p>
-              <p className="text-sm text-muted-foreground">Reservation confirmed at {selectedHotel?.hotelName}.</p>
+              <CheckCircle className="h-12 w-12 text-sky-400 animate-bounce" />
+              <p className="font-bold text-lg text-sky-400">Hotel Booked Successfully!</p>
+              <p className="text-sm text-slate-300">Reservation confirmed at {selectedHotel?.hotelName}.</p>
             </div>
           ) : (
             selectedHotel && (
               <div className="space-y-4 py-4">
-                <div className="bg-slate-50 p-4 rounded-lg space-y-1">
-                  <p className="font-bold">{selectedHotel.hotelName}</p>
-                  <p className="text-sm text-muted-foreground">Location: {selectedHotel.location}</p>
-                  <p className="text-sm text-muted-foreground">Price per Night: ₹{selectedHotel.pricePerNight}</p>
+                <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-lg space-y-1">
+                  <p className="font-bold text-white">{selectedHotel.hotelName}</p>
+                  <p className="text-sm text-slate-300">Location: {selectedHotel.location}</p>
+                  <p className="text-sm text-slate-300">Price per Night: ₹{selectedHotel.pricePerNight}</p>
                 </div>
 
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="rooms">Number of Rooms</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="rooms" className="text-white">Number of Rooms</Label>
                   <Input
-                    type="number"
                     id="rooms"
+                    type="number"
                     min={1}
                     max={selectedHotel.availableRooms}
                     value={rooms}
-                    onChange={(e) => setRooms(Math.max(1, Math.min(selectedHotel.availableRooms, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => setRooms(Math.min(selectedHotel.availableRooms, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="bg-slate-900 border-slate-700 text-white"
                   />
-                  <p className="text-xs text-muted-foreground">Max available: {selectedHotel.availableRooms}</p>
                 </div>
 
-                <div className="flex justify-between items-center font-bold text-lg pt-4 border-t">
-                  <span>Total Price</span>
-                  <span className="text-emerald-600">₹{selectedHotel.pricePerNight * rooms}</span>
+                <div className="flex justify-between items-center pt-2 font-bold text-lg text-white">
+                  <span>Total Price:</span>
+                  <span className="text-sky-400">₹{selectedHotel.pricePerNight * rooms}</span>
                 </div>
 
-                <DialogFooter className="pt-4">
-                  <Button variant="ghost" onClick={() => setBookingDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleBooking} disabled={bookingLoading}>
-                    {bookingLoading ? "Booking..." : "Confirm Booking"}
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setBookingDialogOpen(false)}
+                    className="text-slate-300 hover:text-white hover:bg-slate-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleBooking}
+                    disabled={bookingLoading}
+                    className="bg-sky-500 hover:bg-sky-600 text-white"
+                  >
+                    {bookingLoading ? "Processing..." : "Confirm Booking"}
                   </Button>
                 </DialogFooter>
               </div>

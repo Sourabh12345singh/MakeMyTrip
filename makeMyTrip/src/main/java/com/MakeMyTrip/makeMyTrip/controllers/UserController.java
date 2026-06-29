@@ -63,8 +63,8 @@ public class UserController {
     }
 
     @PostMapping("/edit")
-    public  Users editprofile( @RequestParam String id , @RequestParam  Users updateUser){
-        return userServices.editProfile(id , updateUser) ;
+    public Users editprofile(@RequestParam String id, @RequestBody Users updateUser) {
+        return userServices.editProfile(id, updateUser);
     }
 
 }
