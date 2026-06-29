@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
-@CrossOrigin(origins = "http://localhost:3000") // Allow requests from Next.js frontend
 public class UserController {
     @Autowired
     private UserServices userServices;
