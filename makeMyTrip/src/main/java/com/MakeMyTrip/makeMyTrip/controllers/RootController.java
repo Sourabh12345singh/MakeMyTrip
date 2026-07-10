@@ -24,4 +24,13 @@ public class RootController {
         return "Welcome to Hotel, dawgs";
     }
 
+    @GetMapping("/api/health")
+    public java.util.Map<String, Object> health() {
+        return java.util.Map.of(
+            "status", "UP",
+            "timestamp", java.time.LocalDateTime.now().toString(),
+            "service", "makeMyTrip"
+        );
+    }
+
 }

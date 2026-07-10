@@ -54,8 +54,8 @@ export default function BookingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <Briefcase className="h-8 w-8 text-blue-600" />
+      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2 text-white">
+        <Briefcase className="h-8 w-8 text-sky-400" />
         My Bookings
       </h1>
 

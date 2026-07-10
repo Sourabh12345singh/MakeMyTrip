@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Plane, Hotel, LogOut, User, Shield, Briefcase } from "lucide-react";
+import { Plane, Hotel, LogOut, User, Shield, Briefcase, Radio } from "lucide-react";
 
 export default function Navbar() {
   const { user, logoutUser, isAdmin } = useAuth();
@@ -38,6 +38,13 @@ export default function Navbar() {
             >
               <Hotel className="h-4 w-4 text-sky-500" />
               Hotels
+            </Link>
+            <Link
+              href="/flight-status"
+              className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-sky-500 transition-colors"
+            >
+              <Radio className="h-4 w-4 text-sky-500" />
+              Live Status
             </Link>
           </nav>
         </div>

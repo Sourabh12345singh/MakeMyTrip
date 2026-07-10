@@ -4,6 +4,8 @@ import "../app/globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Toaster } from "@/components/ui/sonner";
+import FlightTrackerBadge from "@/components/FlightTrackerBadge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +45,9 @@ export default function RootLayout({
           <div className="flex-1">
             {children}
           </div>
+          <FlightTrackerBadge />
           <Footer />
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

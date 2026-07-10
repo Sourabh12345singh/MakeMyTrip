@@ -1,16 +1,19 @@
 package com.MakeMyTrip.makeMyTrip.services;
 
 import com.MakeMyTrip.makeMyTrip.models.Flight;
+import com.MakeMyTrip.makeMyTrip.models.TrackedFlight;
 import com.MakeMyTrip.makeMyTrip.models.Users;
 //import com.MakeMyTrip.makeMyTrip.models.Users.Booking;  //we can use either
 import com.MakeMyTrip.makeMyTrip.repositories.FlightRepository;
 import com.MakeMyTrip.makeMyTrip.repositories.HotelRepository;
+import com.MakeMyTrip.makeMyTrip.repositories.TrackedFlightRepository;
 import com.MakeMyTrip.makeMyTrip.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Service
@@ -22,6 +25,8 @@ public class BookingService {
     private FlightRepository flightRepository;
     @Autowired
     private HotelRepository hotelRepository;
+    @Autowired
+    private TrackedFlightRepository trackedFlightRepository;
 
     public Users.Booking bookFlight(String userEmail, String flightId , int seats , double price) {
         Optional<Users> userOptional = Optional.ofNullable(userRepository.findByEmail(userEmail));
@@ -42,6 +47,16 @@ public class BookingService {
             booking.setTotalPrice(price);
             user.getBookings().add(booking);
             userRepository.save(user);
+
+            if (!trackedFlightRepository.existsByUserEmailAndFlightId(userEmail, flightId)) {
+                TrackedFlight tf = new TrackedFlight();
+                tf.setUserEmail(userEmail);
+                tf.setFlightId(flightId);
+                tf.setTrackedSince(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                tf.setFromBooking(true);
+                trackedFlightRepository.save(tf);
+            }
+
             return booking;
 
         }else{

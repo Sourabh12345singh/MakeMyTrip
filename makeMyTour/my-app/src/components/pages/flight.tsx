@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getFlights } from "@/services/flight";
 import { bookFlight } from "@/services/booking";
+import { trackFlight, untrackFlight, getTrackedFlights } from "@/services/flightStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin } from "lucide-react";
+import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin, Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Flight {
   id: string;
@@ -30,6 +32,10 @@ export default function FlightPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
+  // Tracking state
+  const [trackedFlightIds, setTrackedFlightIds] = useState<Set<string>>(new Set());
+  const [trackingLoading, setTrackingLoading] = useState<string | null>(null);
+
   // Search inputs
   const [searchFrom, setSearchFrom] = useState("");
   const [searchTo, setSearchTo] = useState("");
@@ -62,6 +68,42 @@ export default function FlightPage() {
     fetchFlightsList();
   }, []);
 
+  useEffect(() => {
+    if (!user?.email) return;
+    getTrackedFlights(user.email).then((res) => {
+      const ids = new Set<string>();
+      (res.data || []).forEach((tf: any) => ids.add(tf.flightId));
+      setTrackedFlightIds(ids);
+    }).catch(() => {});
+  }, [user?.email]);
+
+  const handleToggleTrack = async (flight: Flight) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    setTrackingLoading(flight.id);
+    try {
+      if (trackedFlightIds.has(flight.id)) {
+        const res = await getTrackedFlights(user.email);
+        const tf = (res.data || []).find((t: any) => t.flightId === flight.id);
+        if (tf) {
+          await untrackFlight(tf.id);
+          setTrackedFlightIds((prev) => { const next = new Set(prev); next.delete(flight.id); return next; });
+          toast.success(`Stopped tracking ${flight.flightName}`);
+        }
+      } else {
+        await trackFlight(user.email, flight.id);
+        setTrackedFlightIds((prev) => new Set(prev).add(flight.id));
+        toast.success(`Now tracking ${flight.flightName}`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Failed to update tracking");
+    } finally {
+      setTrackingLoading(null);
+    }
+  };
+
   const openBookingModal = (flight: Flight) => {
     setSelectedFlight(flight);
     setSeats(1);
@@ -80,6 +122,8 @@ export default function FlightPage() {
         price: selectedFlight.price * seats
       });
       setBookingSuccess(true);
+      setTrackedFlightIds((prev) => new Set(prev).add(selectedFlight.id));
+      toast.success(`Now tracking ${selectedFlight.flightName} live`);
       fetchFlightsList(); // Refresh flight list to get updated seats
       setTimeout(() => {
         setBookingDialogOpen(false);
@@ -181,14 +225,30 @@ export default function FlightPage() {
                   <span className="text-xs text-slate-300 font-semibold">
                     {flight.availableSeats} seats left
                   </span>
-                  <Button 
-                    size="sm" 
-                    onClick={() => openBookingModal(flight)}
-                    disabled={flight.availableSeats <= 0}
-                    className="bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors"
-                  >
-                    {flight.availableSeats <= 0 ? "Sold Out" : "Book Now"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleToggleTrack(flight)}
+                      disabled={trackingLoading === flight.id}
+                      className={`border-slate-700 font-bold transition-colors ${
+                        trackedFlightIds.has(flight.id)
+                          ? "text-sky-400 border-sky-500/40 hover:bg-sky-500/10"
+                          : "text-slate-300 hover:text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      <Radio className={`h-3.5 w-3.5 mr-1 ${trackedFlightIds.has(flight.id) ? "animate-pulse" : ""}`} />
+                      {trackedFlightIds.has(flight.id) ? "Tracking" : "Track"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => openBookingModal(flight)}
+                      disabled={flight.availableSeats <= 0}
+                      className="bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors"
+                    >
+                      {flight.availableSeats <= 0 ? "Sold Out" : "Book Now"}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
