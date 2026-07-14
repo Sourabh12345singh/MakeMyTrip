@@ -2,10 +2,12 @@ package com.MakeMyTrip.makeMyTrip.services;
 
 import com.MakeMyTrip.makeMyTrip.models.Flight;
 import com.MakeMyTrip.makeMyTrip.models.TrackedFlight;
+import com.MakeMyTrip.makeMyTrip.models.PriceFreeze;
 import com.MakeMyTrip.makeMyTrip.models.Users;
 //import com.MakeMyTrip.makeMyTrip.models.Users.Booking;  //we can use either
 import com.MakeMyTrip.makeMyTrip.repositories.FlightRepository;
 import com.MakeMyTrip.makeMyTrip.repositories.HotelRepository;
+import com.MakeMyTrip.makeMyTrip.repositories.PriceFreezeRepository;
 import com.MakeMyTrip.makeMyTrip.repositories.TrackedFlightRepository;
 import com.MakeMyTrip.makeMyTrip.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class BookingService {
     @Autowired
     private TrackedFlightRepository trackedFlightRepository;
 
+    @Autowired
+    private PriceFreezeRepository priceFreezeRepository;
+
     public Users.Booking bookFlight(String userEmail, String flightId , int seats , double price) {
         Optional<Users> userOptional = Optional.ofNullable(userRepository.findByEmail(userEmail));
         Optional<Flight> flightOptional = flightRepository.findById(flightId);
@@ -37,6 +42,18 @@ public class BookingService {
             if( flight.getAvailableSeats() < seats){
                 throw new RuntimeException("Not enough seats available");
             }
+
+            double finalPrice = price;
+            Optional<PriceFreeze> freezeOpt = priceFreezeRepository.findByUserEmailAndFlightIdAndConsumedFalse(userEmail, flightId);
+            if (freezeOpt.isPresent()) {
+                PriceFreeze freeze = freezeOpt.get();
+                if (freeze.getExpiresAt() != null && freeze.getExpiresAt().compareTo(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)) > 0) {
+                    finalPrice = freeze.getFrozenPrice() * seats;
+                    freeze.setConsumed(true);
+                    priceFreezeRepository.save(freeze);
+                }
+            }
+
             flight.setAvailableSeats(flight.getAvailableSeats() - seats);
             flightRepository.save(flight);
             Users.Booking booking = new Users.Booking();
@@ -44,7 +61,7 @@ public class BookingService {
             booking.setBookingId(flight.getId());
             booking.setDate(LocalDate.now().toString());
             booking.setQuantity(seats);
-            booking.setTotalPrice(price);
+            booking.setTotalPrice(finalPrice);
             user.getBookings().add(booking);
             userRepository.save(user);
 

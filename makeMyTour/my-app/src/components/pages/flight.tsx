@@ -5,14 +5,17 @@ import { useAuth } from "@/context/AuthContext";
 import { getFlights } from "@/services/flight";
 import { bookFlight } from "@/services/booking";
 import { trackFlight, untrackFlight, getTrackedFlights } from "@/services/flightStatus";
+import { useDynamicPricing } from "@/hooks/useDynamicPricing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin, Radio } from "lucide-react";
+import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin, Radio, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import PriceFreezeButton from "./PriceFreezeButton";
+import PriceHistoryGraph from "./PriceHistoryGraph";
 
 interface Flight {
   id: string;
@@ -39,6 +42,10 @@ export default function FlightPage() {
   // Search inputs
   const [searchFrom, setSearchFrom] = useState("");
   const [searchTo, setSearchTo] = useState("");
+
+  // Dynamic pricing
+  const { priceMap, recentChanges } = useDynamicPricing(flights.map((f) => f.id), user?.email);
+  const [priceHistoryFlight, setPriceHistoryFlight] = useState<Flight | null>(null);
 
   // Booking state
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
@@ -114,12 +121,13 @@ export default function FlightPage() {
   const handleBooking = async () => {
     if (!selectedFlight || !user) return;
     setBookingLoading(true);
+    const currentPrice = priceMap[selectedFlight.id] ?? selectedFlight.price;
     try {
       await bookFlight({
         email: user.email,
         flightId: selectedFlight.id,
         seats: seats,
-        price: selectedFlight.price * seats
+        price: currentPrice * seats
       });
       setBookingSuccess(true);
       setTrackedFlightIds((prev) => new Set(prev).add(selectedFlight.id));
@@ -189,41 +197,62 @@ export default function FlightPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredFlights.map((flight) => (
+          {filteredFlights.map((flight) => {
+            const dynamicPrice = priceMap[flight.id] ?? flight.price;
+            const change = recentChanges[flight.id];
+            const priceFlashClass = change === "up"
+              ? "text-red-400 transition-colors duration-300"
+              : change === "down"
+              ? "text-emerald-400 transition-colors duration-300"
+              : "text-sky-400";
+            return (
             <Card key={flight.id} className="bg-black/60 backdrop-blur-md border border-slate-700/40 hover:border-sky-500/40 transition-all duration-300 text-white shadow-xl hover:shadow-2xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-bold flex items-center justify-between text-white">
-                  <span>{flight.flightName}</span>
-                  <span className="text-sky-400 font-extrabold text-lg">₹{flight.price}</span>
-                </CardTitle>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-xl font-bold text-white">{flight.flightName}</CardTitle>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <PriceFreezeButton
+                      flightId={flight.id}
+                      flightName={flight.flightName}
+                      currentPrice={dynamicPrice}
+                      userEmail={user?.email}
+                      onFreeze={() => {
+                        setTrackedFlightIds((prev) => new Set(prev).add(flight.id));
+                      }}
+                    />
+                    <span className={`${priceFlashClass} font-extrabold text-lg transition-colors duration-500`}>₹{Math.round(dynamicPrice)}</span>
+                    <button
+                      onClick={() => setPriceHistoryFlight(flight)}
+                      className="text-slate-500 hover:text-sky-400 transition-colors"
+                      title="Price history"
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center text-sm font-medium text-white bg-slate-800/40 border border-slate-700/40 p-2.5 rounded-lg">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold block">FROM</span>
-                    {flight.from}
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-4 text-sm bg-slate-800/30 border border-slate-700/30 p-3 rounded-lg">
+                  <div className="flex-1">
+                    <div className="text-[10px] text-slate-500 font-semibold tracking-wider">FROM</div>
+                    <div className="font-semibold text-white">{flight.from}</div>
+                    <div className="text-[11px] text-slate-400">{flight.departureTime}</div>
                   </div>
-                  {/* Plane logo points to the right corner (natural 45-degree angle) */}
-                  <Plane className="h-4 w-4 text-sky-400" />
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 font-bold block">TO</span>
-                    {flight.to}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="w-16 h-px bg-slate-600" />
+                    <Plane className="h-4 w-4 text-sky-400 -rotate-45" />
+                    <div className="w-16 h-px bg-slate-600" />
                   </div>
-                </div>
-
-                <div className="flex justify-between text-xs text-slate-300">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-sky-400" />
-                    <span>Dep: {flight.departureTime}</span>
-                  </div>
-                  <div>
-                    <span>Arr: {flight.arrivalTime}</span>
+                  <div className="flex-1 text-right">
+                    <div className="text-[10px] text-slate-500 font-semibold tracking-wider">TO</div>
+                    <div className="font-semibold text-white">{flight.to}</div>
+                    <div className="text-[11px] text-slate-400">{flight.arrivalTime}</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-700/40">
-                  <span className="text-xs text-slate-300 font-semibold">
-                    {flight.availableSeats} seats left
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs text-slate-400">
+                    <span className="font-semibold text-slate-300">{flight.availableSeats}</span> seats left
                   </span>
                   <div className="flex gap-2">
                     <Button
@@ -231,20 +260,20 @@ export default function FlightPage() {
                       variant="outline"
                       onClick={() => handleToggleTrack(flight)}
                       disabled={trackingLoading === flight.id}
-                      className={`border-slate-700 font-bold transition-colors ${
+                      className={`border-slate-700 font-semibold transition-colors h-8 text-xs px-3 ${
                         trackedFlightIds.has(flight.id)
                           ? "text-sky-400 border-sky-500/40 hover:bg-sky-500/10"
                           : "text-slate-300 hover:text-white hover:bg-slate-800"
                       }`}
                     >
-                      <Radio className={`h-3.5 w-3.5 mr-1 ${trackedFlightIds.has(flight.id) ? "animate-pulse" : ""}`} />
+                      <Radio className={`h-3.5 w-3.5 mr-1.5 ${trackedFlightIds.has(flight.id) ? "animate-pulse" : ""}`} />
                       {trackedFlightIds.has(flight.id) ? "Tracking" : "Track"}
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => openBookingModal(flight)}
                       disabled={flight.availableSeats <= 0}
-                      className="bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors"
+                      className="bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-white font-semibold transition-all h-8 text-xs px-4 shadow-lg shadow-sky-500/20"
                     >
                       {flight.availableSeats <= 0 ? "Sold Out" : "Book Now"}
                     </Button>
@@ -252,7 +281,8 @@ export default function FlightPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -277,13 +307,15 @@ export default function FlightPage() {
               <p className="text-sm text-slate-300">Your reservation has been confirmed.</p>
             </div>
           ) : (
-            selectedFlight && (
+            selectedFlight && (() => {
+              const modalPrice = priceMap[selectedFlight.id] ?? selectedFlight.price;
+              return (
               <div className="space-y-4 py-4">
                 <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-lg space-y-1">
                   <p className="font-bold text-white">{selectedFlight.flightName}</p>
                   <p className="text-sm text-slate-300">Route: {selectedFlight.from} ➔ {selectedFlight.to}</p>
                   <p className="text-sm text-slate-300">Departure: {selectedFlight.departureTime}</p>
-                  <p className="text-sm text-slate-300">Base Price: ₹{selectedFlight.price} per seat</p>
+                  <p className="text-sm text-slate-300">Current Price: <span className="text-sky-400 font-bold">₹{Math.round(modalPrice)}</span> per seat</p>
                 </div>
 
                 <div className="space-y-2">
@@ -301,7 +333,7 @@ export default function FlightPage() {
 
                 <div className="flex justify-between items-center pt-2 font-bold text-lg text-white">
                   <span>Total Price:</span>
-                  <span className="text-sky-400">₹{selectedFlight.price * seats}</span>
+                  <span className="text-sky-400">₹{Math.round((priceMap[selectedFlight.id] ?? selectedFlight.price) * seats)}</span>
                 </div>
 
                 <DialogFooter className="gap-2 sm:gap-0">
@@ -321,10 +353,21 @@ export default function FlightPage() {
                   </Button>
                 </DialogFooter>
               </div>
-            )
+            );
+            })()
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Price History Dialog */}
+      {priceHistoryFlight && (
+        <PriceHistoryGraph
+          flightId={priceHistoryFlight.id}
+          flightName={priceHistoryFlight.flightName}
+          open={!!priceHistoryFlight}
+          onOpenChange={(open) => { if (!open) setPriceHistoryFlight(null); }}
+        />
+      )}
     </div>
   );
 }

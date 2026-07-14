@@ -42,6 +42,7 @@ public class DataSeeder implements CommandLineRunner {
         f1.setDepartureTime("06:30");
         f1.setArrivalTime("08:15");
         f1.setPrice(4500);
+        f1.setBasePrice(4500);
         f1.setAvailableSeats(120);
         flightRepository.save(f1);
 
@@ -52,6 +53,7 @@ public class DataSeeder implements CommandLineRunner {
         f2.setDepartureTime("09:00");
         f2.setArrivalTime("11:00");
         f2.setPrice(5200);
+        f2.setBasePrice(5200);
         f2.setAvailableSeats(90);
         flightRepository.save(f2);
 
@@ -62,6 +64,7 @@ public class DataSeeder implements CommandLineRunner {
         f3.setDepartureTime("14:00");
         f3.setArrivalTime("16:30");
         f3.setPrice(6800);
+        f3.setBasePrice(6800);
         f3.setAvailableSeats(75);
         flightRepository.save(f3);
 
@@ -72,6 +75,7 @@ public class DataSeeder implements CommandLineRunner {
         f4.setDepartureTime("17:00");
         f4.setArrivalTime("19:15");
         f4.setPrice(7500);
+        f4.setBasePrice(7500);
         f4.setAvailableSeats(60);
         flightRepository.save(f4);
 
@@ -82,6 +86,7 @@ public class DataSeeder implements CommandLineRunner {
         f5.setDepartureTime("08:00");
         f5.setArrivalTime("09:00");
         f5.setPrice(3200);
+        f5.setBasePrice(3200);
         f5.setAvailableSeats(100);
         flightRepository.save(f5);
     }
