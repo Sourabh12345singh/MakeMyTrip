@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import PriceFreezeButton from "./PriceFreezeButton";
 import PriceHistoryGraph from "./PriceHistoryGraph";
+import SeatMapDialog from "./SeatMapDialog";
 
 interface Flight {
   id: string;
@@ -53,6 +54,10 @@ export default function FlightPage() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // Seat selection state
+  const [seatMapOpen, setSeatMapOpen] = useState(false);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
   const fetchFlightsList = async () => {
     setLoading(true);
@@ -114,6 +119,7 @@ export default function FlightPage() {
   const openBookingModal = (flight: Flight) => {
     setSelectedFlight(flight);
     setSeats(1);
+    setSelectedSeats([]);
     setBookingSuccess(false);
     setBookingDialogOpen(true);
   };
@@ -127,7 +133,8 @@ export default function FlightPage() {
         email: user.email,
         flightId: selectedFlight.id,
         seats: seats,
-        price: currentPrice * seats
+        price: currentPrice * seats,
+        selectedSeats: selectedSeats.length > 0 ? selectedSeats : undefined,
       });
       setBookingSuccess(true);
       setTrackedFlightIds((prev) => new Set(prev).add(selectedFlight.id));
@@ -326,9 +333,24 @@ export default function FlightPage() {
                     min={1}
                     max={selectedFlight.availableSeats}
                     value={seats}
-                    onChange={(e) => setSeats(Math.min(selectedFlight.availableSeats, Math.max(1, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => {
+                      setSeats(Math.min(selectedFlight.availableSeats, Math.max(1, parseInt(e.target.value) || 1)));
+                      setSelectedSeats([]);
+                    }}
                     className="bg-slate-900 border-slate-700 text-white"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSeatMapOpen(true)}
+                    className="w-full border-slate-600 text-sky-400 hover:text-sky-300 hover:border-sky-500"
+                  >
+                    {selectedSeats.length > 0
+                      ? `Selected Seats: ${selectedSeats.join(", ")}`
+                      : "Select Your Seats"}
+                  </Button>
                 </div>
 
                 <div className="flex justify-between items-center pt-2 font-bold text-lg text-white">
@@ -358,6 +380,20 @@ export default function FlightPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Seat Map Dialog */}
+      {selectedFlight && (
+        <SeatMapDialog
+          open={seatMapOpen}
+          onOpenChange={setSeatMapOpen}
+          flightId={selectedFlight.id}
+          flightName={selectedFlight.flightName}
+          basePrice={priceMap[selectedFlight.id] ?? selectedFlight.price}
+          maxSeats={seats}
+          userEmail={user?.email}
+          onConfirm={(seatsArray) => setSelectedSeats(seatsArray)}
+        />
+      )}
 
       {/* Price History Dialog */}
       {priceHistoryFlight && (

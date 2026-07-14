@@ -14,6 +14,8 @@ public class Flight {
     private double price;
     private double basePrice;
     private int availableSeats;
+    private int totalRows;
+    private int seatsPerRow;
 
     // Getters and Setters
 
@@ -88,4 +90,9 @@ public class Flight {
     public void setAvailableSeats(int availableSeats) {
         this.availableSeats = availableSeats;
     }
+
+    public int getTotalRows() { return totalRows; }
+    public void setTotalRows(int totalRows) { this.totalRows = totalRows; }
+    public int getSeatsPerRow() { return seatsPerRow; }
+    public void setSeatsPerRow(int seatsPerRow) { this.seatsPerRow = seatsPerRow; }
 }

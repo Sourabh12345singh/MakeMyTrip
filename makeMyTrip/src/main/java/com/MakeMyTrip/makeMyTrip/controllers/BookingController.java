@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,8 +26,10 @@ public class BookingController {
             String flightId = bookingData.get("flightId").toString();
             int seats = Integer.parseInt(bookingData.get("seats").toString());
             double price = Double.parseDouble(bookingData.get("price").toString());
+            @SuppressWarnings("unchecked")
+            List<String> selectedSeats = (List<String>) bookingData.get("selectedSeats");
 
-            Users.Booking booking = bookingService.bookFlight(email, flightId, seats, price);
+            Users.Booking booking = bookingService.bookFlight(email, flightId, seats, price, selectedSeats);
             return ResponseEntity.ok(booking);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -40,8 +43,9 @@ public class BookingController {
             String hotelId = bookingData.get("hotelId").toString();
             int rooms = Integer.parseInt(bookingData.get("rooms").toString());
             double price = Double.parseDouble(bookingData.get("price").toString());
+            String roomTypeId = (String) bookingData.get("roomTypeId");
 
-            Users.Booking booking = bookingService.bookHotel(email, hotelId, rooms, price);
+            Users.Booking booking = bookingService.bookHotel(email, hotelId, rooms, price, roomTypeId);
             return ResponseEntity.ok(booking);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

@@ -36,6 +36,8 @@ public class Users {
         private double totalPrice;
         private boolean cancelled = false;
         private String refundId;
+        private List<String> selectedSeats = new ArrayList<>();
+        private String roomTypeName;
     }
 }
 

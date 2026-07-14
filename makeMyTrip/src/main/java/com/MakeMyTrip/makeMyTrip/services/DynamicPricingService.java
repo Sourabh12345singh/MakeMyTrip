@@ -32,6 +32,11 @@ public class DynamicPricingService {
 
     private final Map<String, Double> lastPublishedPrice = new HashMap<>();
 
+    // Mock surge: full up + down cycle in 5 minutes (10 ticks up, 10 ticks down at 30s each)
+    private static final long SURGE_CYCLE_MS = 5 * 60 * 1000;
+    // Absolute max price for the simulation
+    private static final double MAX_PRICE = 200000.0;
+
     @Scheduled(fixedRate = 30000)
     public void updatePrices() {
         List<Flight> flights = flightRepository.findAll();
@@ -42,19 +47,27 @@ public class DynamicPricingService {
             double basePrice = flight.getBasePrice() > 0 ? flight.getBasePrice() : flight.getPrice();
             double oldPrice = flight.getPrice();
 
+            // --- Mock surge cycle: oscillates from 1.0 up to maxSurge and back to 1.0 ---
+            long now = System.currentTimeMillis();
+            double phase = (now % SURGE_CYCLE_MS) / (double) SURGE_CYCLE_MS;
+            double maxSurge = Math.min(50.0, MAX_PRICE / basePrice);
+            double mockFactor = 1.0 + (maxSurge - 1.0) * Math.sin(Math.PI * phase);
+
+            // --- Real demand factor (based on seat availability) ---
             double demandFactor = 1.0 + (1.0 - (double) flight.getAvailableSeats() / 150.0) * 0.5;
             demandFactor = Math.max(1.0, Math.min(1.5, demandFactor));
 
+            // --- Seasonal factor ---
             double seasonalFactor = isHolidaySeason ? 1.2 : 1.0;
 
+            // --- Time-to-departure factor ---
             String[] depParts = flight.getDepartureTime().split(":");
             LocalTime departureTime = LocalTime.of(Integer.parseInt(depParts[0]), Integer.parseInt(depParts[1]));
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime departureDt = LocalDateTime.of(now.toLocalDate(), departureTime);
-            if (departureDt.isBefore(now)) {
+            LocalDateTime departureDt = LocalDateTime.of(LocalDateTime.now().toLocalDate(), departureTime);
+            if (departureDt.isBefore(LocalDateTime.now())) {
                 departureDt = departureDt.plusDays(1);
             }
-            long hoursUntilDeparture = Duration.between(now, departureDt).toHours();
+            long hoursUntilDeparture = Duration.between(LocalDateTime.now(), departureDt).toHours();
             double timeFactor;
             String timeDesc;
             if (hoursUntilDeparture < 48) {
@@ -68,7 +81,9 @@ public class DynamicPricingService {
                 timeDesc = "No time surcharge";
             }
 
-            double newPrice = basePrice * demandFactor * seasonalFactor * timeFactor;
+            // Combined price: mock surge is the dominant driver, demand/season/time add realistic noise
+            double newPrice = basePrice * mockFactor * (0.8 + 0.2 * demandFactor * seasonalFactor * timeFactor);
+            newPrice = Math.min(MAX_PRICE, newPrice);
             newPrice = Math.round(newPrice / 10.0) * 10.0;
 
             if (Math.abs(newPrice - oldPrice) < 1.0) {
@@ -78,23 +93,35 @@ public class DynamicPricingService {
             flight.setPrice(newPrice);
             flightRepository.save(flight);
 
+            // --- Determine reason and description ---
             String reason;
             String description;
-            if (seasonalFactor > 1.0 && demandFactor > 1.2) {
-                reason = "DEMAND_SEASONAL";
-                description = "Holiday season + demand surge";
-            } else if (seasonalFactor > 1.0) {
-                reason = "SEASONAL";
-                description = "Holiday season premium";
-            } else if (timeFactor > 1.0) {
-                reason = "TIME_TO_DEPARTURE";
-                description = timeDesc;
-            } else if (demandFactor > 1.1) {
-                reason = "DEMAND";
-                description = String.format("Demand surge (%.0f%% seats booked)", (1 - (double) flight.getAvailableSeats() / 150.0) * 100);
+            double surgeProgress = (mockFactor - 1.0) / (maxSurge - 1.0);
+
+            boolean isRising = phase < 0.5;
+            if (surgeProgress > 0.95) {
+                reason = "MOCK_PEAK";
+                description = String.format("Peak surge — ₹%.0f", newPrice);
+            } else if (isRising && surgeProgress > 0.1) {
+                reason = "MOCK_SURGE_UP";
+                description = String.format("Mock surge rising — %.0f%% toward ₹%.0f", surgeProgress * 100, MAX_PRICE);
+            } else if (isRising) {
+                reason = "MOCK_SURGE_START";
+                description = "Mock surge starting from base price";
+            } else if (surgeProgress > 0.1) {
+                reason = "MOCK_SURGE_DOWN";
+                description = String.format("Mock surge correcting — %.0f%% back to base price", (1 - surgeProgress) * 100);
             } else {
-                reason = "DEMAND";
-                description = "Price adjusted to demand";
+                reason = "MOCK_BASE";
+                description = "Price returned to base level";
+            }
+
+            String extraFactors = "";
+            if (seasonalFactor > 1.0) extraFactors += "Holiday season ";
+            if (timeFactor > 1.0) extraFactors += timeDesc + " ";
+            if (demandFactor > 1.1) extraFactors += String.format("Demand (%.0f%% booked) ", (1 - (double) flight.getAvailableSeats() / 150.0) * 100);
+            if (!extraFactors.isEmpty()) {
+                description += " | " + extraFactors.trim();
             }
 
             PriceHistory history = new PriceHistory();

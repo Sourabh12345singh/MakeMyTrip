@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Hotel, MapPin, ShieldAlert, CheckCircle, Bed, Sparkles, Search } from "lucide-react";
+import { Hotel as HotelIcon, MapPin, ShieldAlert, CheckCircle, Bed, Sparkles, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
+import RoomTypeGrid from "./RoomTypeGrid";
 
 interface HotelData {
   id: string;
@@ -38,6 +39,12 @@ export default function HotelPage() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
+  // Room type state
+  const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string | undefined>();
+  const [selectedRoomName, setSelectedRoomName] = useState<string>("");
+  const [selectedRoomPremium, setSelectedRoomPremium] = useState(0);
+  const [roomSelectionDone, setRoomSelectionDone] = useState(false);
+
   const fetchHotelsList = async () => {
     setLoading(true);
     try {
@@ -64,18 +71,32 @@ export default function HotelPage() {
     setSelectedHotel(hotel);
     setRooms(1);
     setBookingSuccess(false);
+    setSelectedRoomTypeId(undefined);
+    setSelectedRoomName("");
+    setSelectedRoomPremium(0);
+    setRoomSelectionDone(false);
     setBookingDialogOpen(true);
+  };
+
+  const handleRoomSelect = (roomTypeId: string, roomName: string, quantity: number, premium: number) => {
+    setSelectedRoomTypeId(roomTypeId);
+    setSelectedRoomName(roomName);
+    setRooms(quantity);
+    setSelectedRoomPremium(premium);
   };
 
   const handleBooking = async () => {
     if (!selectedHotel || !user) return;
     setBookingLoading(true);
+    const pricePerNight = selectedHotel.pricePerNight + selectedRoomPremium;
+    const totalPrice = pricePerNight * rooms;
     try {
       await bookHotel({
         email: user.email,
         hotelId: selectedHotel.id,
         rooms: rooms,
-        price: selectedHotel.pricePerNight * rooms
+        price: totalPrice,
+        roomTypeId: selectedRoomTypeId || undefined,
       });
       setBookingSuccess(true);
       fetchHotelsList(); // Refresh hotel list
@@ -97,8 +118,8 @@ export default function HotelPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-extrabold flex items-center gap-2 text-white">
-          <Hotel className="h-8 w-8 text-sky-400" />
+          <h1 className="text-3xl font-extrabold flex items-center gap-2 text-white">
+          <HotelIcon className="h-8 w-8 text-sky-400" />
           Recommended Hotels
         </h1>
 
@@ -204,21 +225,22 @@ export default function HotelPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="rooms" className="text-white">Number of Rooms</Label>
-                  <Input
-                    id="rooms"
-                    type="number"
-                    min={1}
-                    max={selectedHotel.availableRooms}
-                    value={rooms}
-                    onChange={(e) => setRooms(Math.min(selectedHotel.availableRooms, Math.max(1, parseInt(e.target.value) || 1)))}
-                    className="bg-slate-900 border-slate-700 text-white"
+                  <Label className="text-white">Select Room Type</Label>
+                  <RoomTypeGrid
+                    hotelId={selectedHotel.id}
+                    basePrice={selectedHotel.pricePerNight}
+                    userEmail={user?.email}
+                    onSelect={handleRoomSelect}
+                    onConfirm={() => setRoomSelectionDone(true)}
+                    confirmedRoomTypeId={roomSelectionDone ? selectedRoomTypeId : undefined}
+                    confirmedRoomName={roomSelectionDone ? selectedRoomName : undefined}
+                    confirmedQuantity={roomSelectionDone ? rooms : undefined}
                   />
                 </div>
 
                 <div className="flex justify-between items-center pt-2 font-bold text-lg text-white">
                   <span>Total Price:</span>
-                  <span className="text-sky-400">₹{selectedHotel.pricePerNight * rooms}</span>
+                  <span className="text-sky-400">₹{Math.round((selectedHotel.pricePerNight + selectedRoomPremium) * rooms)}</span>
                 </div>
 
                 <DialogFooter className="gap-2 sm:gap-0">
