@@ -8,9 +8,11 @@ import { getRefunds, RefundData } from "@/services/refund";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Plane, Hotel, Calendar, CreditCard, XCircle, RefreshCw } from "lucide-react";
+import { Briefcase, Plane, Hotel, Calendar, CreditCard, XCircle, RefreshCw, Headphones } from "lucide-react";
 import CancelBookingDialog from "./CancelBookingDialog";
 import RefundStatusTracker from "./RefundStatusTracker";
+import ContactSupportDialog from "./ContactSupportDialog";
+import { useRefundTracking } from "@/hooks/useRefundTracking";
 
 interface Booking {
   type: string;
@@ -30,6 +32,19 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
+  const [supportTarget, setSupportTarget] = useState<Booking | null>(null);
+
+  useRefundTracking(user?.email, (updated) => {
+    setRefunds((prev) => {
+      const existing = prev.findIndex((r) => r.id === updated.id);
+      if (existing >= 0) {
+        const next = [...prev];
+        next[existing] = updated;
+        return next;
+      }
+      return [updated, ...prev];
+    });
+  });
 
   useEffect(() => {
     if (!authLoading) {
@@ -173,6 +188,14 @@ export default function BookingsPage() {
                               <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="font-bold text-slate-300">{booking.type} Booking</h3>
                                 <Badge variant="outline" className="border-red-500/30 text-red-400 text-[10px]">Cancelled</Badge>
+                                <button
+                                  onClick={() => setSupportTarget(booking)}
+                                  className="flex items-center gap-1 text-[10px] text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 px-2 py-0.5 rounded-full transition-colors"
+                                  title="Contact support"
+                                >
+                                  <Headphones className="h-3 w-3" />
+                                  Help
+                                </button>
                               </div>
                               <p className="text-xs text-slate-600 mt-1">ID: {booking.bookingId}</p>
                               <div className="text-xs text-slate-500 mt-2">
@@ -211,6 +234,15 @@ export default function BookingsPage() {
           open={!!cancelTarget}
           onOpenChange={(open) => { if (!open) setCancelTarget(null); }}
           onCancelled={handleCancelled}
+        />
+      )}
+
+      {/* Support dialog */}
+      {supportTarget && (
+        <ContactSupportDialog
+          bookingId={supportTarget.bookingId}
+          open={!!supportTarget}
+          onOpenChange={(open) => { if (!open) setSupportTarget(null); }}
         />
       )}
     </div>

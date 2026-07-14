@@ -3,6 +3,7 @@ package com.MakeMyTrip.makeMyTrip.services;
 import com.MakeMyTrip.makeMyTrip.models.*;
 import com.MakeMyTrip.makeMyTrip.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,9 @@ public class RefundService {
 
     @Autowired
     private RefundRepository refundRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     public static final List<String> CANCELLATION_REASONS = Arrays.asList(
         "Changed plans",
@@ -96,6 +100,8 @@ public class RefundService {
         user.getBookings().set(bookingIndex, booking);
         userRepository.save(user);
 
+        messagingTemplate.convertAndSend("/topic/refund/" + userEmail, (Object) refund);
+
         return refund;
     }
 
@@ -110,6 +116,7 @@ public class RefundService {
                     r.setStatus("PROCESSED");
                     r.setProcessedAt(now.toString());
                     refundRepository.save(r);
+                    messagingTemplate.convertAndSend("/topic/refund/" + r.getUserEmail(), (Object) r);
                 }
             }
         }
@@ -121,6 +128,7 @@ public class RefundService {
                 if (now.isAfter(processedAt.plusSeconds(15))) {
                     r.setStatus("COMPLETED");
                     refundRepository.save(r);
+                    messagingTemplate.convertAndSend("/topic/refund/" + r.getUserEmail(), (Object) r);
                 }
             }
         }
