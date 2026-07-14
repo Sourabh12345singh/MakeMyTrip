@@ -34,6 +34,8 @@ public class Users {
         private String date;
         private int quantity;
         private double totalPrice;
+        private boolean cancelled = false;
+        private String refundId;
     }
 }
 
