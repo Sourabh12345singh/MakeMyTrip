@@ -6,17 +6,19 @@ import { getFlights } from "@/services/flight";
 import { bookFlight } from "@/services/booking";
 import { trackFlight, untrackFlight, getTrackedFlights } from "@/services/flightStatus";
 import { useDynamicPricing } from "@/hooks/useDynamicPricing";
+import { reviewAPI } from "@/services/reviews";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin, Radio, TrendingUp } from "lucide-react";
+import { Plane, Clock, ShieldAlert, CheckCircle, Search, MapPin, Radio, TrendingUp, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import PriceFreezeButton from "./PriceFreezeButton";
 import PriceHistoryGraph from "./PriceHistoryGraph";
 import SeatMapDialog from "./SeatMapDialog";
+import ReviewSection from "./ReviewSection";
 
 interface Flight {
   id: string;
@@ -295,7 +297,7 @@ export default function FlightPage() {
 
       {/* Booking Dialog */}
       <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border border-slate-700 text-white">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-700 text-white">
           <DialogHeader>
             <DialogTitle className="text-white">Confirm Flight Booking</DialogTitle>
           </DialogHeader>
@@ -377,6 +379,22 @@ export default function FlightPage() {
               </div>
             );
             })()
+          )}
+          {/* Reviews Section */}
+          {selectedFlight && (
+            <div className="mt-8 border-t border-slate-700 pt-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-400" />
+                Reviews & Ratings
+              </h3>
+              <ReviewSection
+                entityType="Flight"
+                entityId={selectedFlight.id}
+                entityName={selectedFlight.flightName}
+                userEmail={user?.email || ""}
+                isAuthenticated={!!user}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

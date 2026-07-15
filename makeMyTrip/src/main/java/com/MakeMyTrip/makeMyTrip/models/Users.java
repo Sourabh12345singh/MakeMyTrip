@@ -27,7 +27,6 @@ public class Users {
 
     @Data
     @NoArgsConstructor
-    @AllArgsConstructor
     public static class Booking {
         private String type;
         private String bookingId;

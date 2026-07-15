@@ -60,18 +60,9 @@ export function useFlightTracking() {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-    const wsUrl = baseUrl.replace(/^http/, "ws");
 
     const client = new Client({
-      brokerURL: `${wsUrl}/ws`,
-      webSocketFactory: () => {
-        try {
-          return new WebSocket(`${wsUrl}/ws`);
-        } catch {
-          console.log("Native WebSocket failed, trying SockJS...");
-          return new SockJS(`${baseUrl}/ws`);
-        }
-      },
+      webSocketFactory: () => new SockJS(`${baseUrl}/ws`),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,

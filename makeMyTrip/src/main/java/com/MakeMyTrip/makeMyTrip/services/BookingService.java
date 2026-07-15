@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -111,11 +112,14 @@ public class BookingService {
         booking.setSelectedSeats(selectedSeats != null ? selectedSeats : new java.util.ArrayList<>());
 
         // Atomic push to bookings array — avoids race condition overwrites
-        mongoTemplate.updateFirst(
+        var result = mongoTemplate.updateFirst(
             query(Criteria.where("email").is(userEmail)),
             new Update().push("bookings", booking),
             Users.class
         );
+        if (result.getModifiedCount() == 0) {
+            throw new RuntimeException("Failed to save booking — user not found");
+        }
 
         if (!trackedFlightRepository.existsByUserEmailAndFlightId(userEmail, flightId)) {
             TrackedFlight tf = new TrackedFlight();
@@ -172,11 +176,14 @@ public class BookingService {
         }
 
         // Atomic push to bookings array
-        mongoTemplate.updateFirst(
+        var result = mongoTemplate.updateFirst(
             query(Criteria.where("email").is(userEmail)),
             new Update().push("bookings", booking),
             Users.class
         );
+        if (result.getModifiedCount() == 0) {
+            throw new RuntimeException("Failed to save booking — user not found");
+        }
 
         return booking;
     }

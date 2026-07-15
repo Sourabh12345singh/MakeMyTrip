@@ -1,28 +1,38 @@
 package com.MakeMyTrip.makeMyTrip.components;
 
-import com.MakeMyTrip.makeMyTrip.models.Flight;
-import com.MakeMyTrip.makeMyTrip.models.FlightSeatMap;
-import com.MakeMyTrip.makeMyTrip.models.Hotel;
-import com.MakeMyTrip.makeMyTrip.models.HotelRoomType;
-import com.MakeMyTrip.makeMyTrip.repositories.FlightRepository;
-import com.MakeMyTrip.makeMyTrip.repositories.FlightSeatMapRepository;
-import com.MakeMyTrip.makeMyTrip.repositories.HotelRepository;
-import com.MakeMyTrip.makeMyTrip.repositories.HotelRoomTypeRepository;
+import com.MakeMyTrip.makeMyTrip.models.*;
+import com.MakeMyTrip.makeMyTrip.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
 
     @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private ReviewReplyRepository reviewReplyRepository;
+
+    @Autowired
+    private ReviewFlagRepository reviewFlagRepository;
+
+    @Autowired
+    private ReviewVoteRepository reviewVoteRepository;
+
+    @Autowired
     private FlightRepository flightRepository;
+
     @Autowired
     private HotelRepository hotelRepository;
+
     @Autowired
     private FlightSeatMapRepository flightSeatMapRepository;
+
     @Autowired
     private HotelRoomTypeRepository hotelRoomTypeRepository;
 
@@ -64,6 +74,8 @@ public class DataSeeder implements CommandLineRunner {
             }
         }
         System.out.println("Room types verified for " + hotels.size() + " hotels.");
+
+        seedDummyReviews();
     }
 
     private void seedFlights() {
@@ -223,5 +235,153 @@ public class DataSeeder implements CommandLineRunner {
             + "<circle cx='110' cy='118' r='8' fill='" + accent + "' opacity='0.3'/>"
             + "<circle cx='110' cy='118' r='4' fill='" + accent + "' opacity='0.5'/>"
             + "</svg>";
+    }
+
+    private void seedDummyReviews() {
+        List<Flight> flights = flightRepository.findAll();
+        List<Hotel> hotels = hotelRepository.findAll();
+
+        if (hotels.isEmpty() || flights.isEmpty()) {
+            System.out.println("No hotels or flights found to seed reviews.");
+            return;
+        }
+
+        Random rand = new Random();
+        String[] userNames = {"John Smith", "Sarah Johnson", "Michael Brown", "Emily Davis", "David Wilson",
+            "Jessica Miller", "Christopher Taylor", "Ashley Anderson", "Matthew Thomas", "Amanda Martinez"};
+
+        String[] reviewTitles = {"Excellent Service!", "Great Experience", "Could Be Better", "Terrible Experience",
+            "Average Flight", "Amazing Hotel", "Disappointing", "Worth Every Penny", "Poor Service", "Good Value"};
+
+        String[] reviewDescriptions = {
+            "The flight was on time and the staff was very friendly. Highly recommend!",
+            "The hotel exceeded my expectations. Beautiful rooms and great amenities.",
+            "The food was okay but the service was slow.",
+            "The flight was delayed by 3 hours and the staff was unhelpful.",
+            "Overall good but could improve on customer service.",
+            "Amazing experience from check-in to check-out. Will book again!",
+            "The hotel was clean but the WiFi was slow.",
+            "Great value for the money. The flight was comfortable.",
+            "Poor service and uncomfortable seats.",
+            "Nice facility but maintenance was lacking."
+        };
+
+        String[] commentReasons = {"Hate", "Feels outdated", "Broken", "Annoying", "Not helpful"};
+
+        String[] flagReasons = {"Inappropriate content", "Spam", "False information", "Hate speech", "Privacy violation"};
+
+        for (int i = 0; i < 20; i++) {
+            if (i % 2 == 0 && !flights.isEmpty()) {
+                Flight flight = flights.get(rand.nextInt(flights.size()));
+                seedReview("Flight", flight.getId(), userNames[rand.nextInt(userNames.length)],
+                    reviewTitles[rand.nextInt(reviewTitles.length)],
+                    reviewDescriptions[rand.nextInt(reviewDescriptions.length)],
+                    rand.nextInt(5) + 1, 0, 10, flight);
+            } else if (!hotels.isEmpty()) {
+                Hotel hotel = hotels.get(rand.nextInt(hotels.size()));
+                seedReview("Hotel", hotel.getId(), userNames[rand.nextInt(userNames.length)],
+                    reviewTitles[rand.nextInt(reviewTitles.length)],
+                    reviewDescriptions[rand.nextInt(reviewDescriptions.length)],
+                    rand.nextInt(5) + 1, 1, 15, hotel);
+            }
+        }
+    }
+
+    private void seedReview(String entityType, String entityId, String userName, String title,
+                           String description, int rating, int imageCount, int maxImages, Flight flight) {
+        Random rand = new Random();
+        Review review = new Review();
+        review.setEntityType(entityType);
+        review.setEntityId(entityId);
+        review.setUserEmail("user" + Math.abs(entityId.hashCode()) % 10000 + "@example.com");
+        review.setUserName(userName);
+        review.setRating(rating);
+        review.setTitle(title);
+        review.setDescription(description);
+        review.setHelpfulCount(0);
+        review.setCreatedAt(LocalDateTime.now().minusDays(rand.nextInt(30)).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        review.setUpdatedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+        List<String> imageUrls = new ArrayList<>();
+        for (int i = 0; i < imageCount; i++) {
+            imageUrls.add("https://picsum.photos/seed/" + Math.abs(rand.nextInt()) + "/200/200");
+        }
+        review.setImageUrls(imageUrls);
+
+        Review savedReview = reviewRepository.save(review);
+
+        if (entityType.equals("Flight")) {
+            seedReplies(savedReview.getId(), rand.nextInt(3) + 1);
+            if (rand.nextDouble() < 0.3) {
+                seedFlag(savedReview.getId(), rand.nextDouble() < 0.5 ? ReviewFlagStatus.RESOLVED : ReviewFlagStatus.PENDING);
+            }
+        } else {
+            seedReplies(savedReview.getId(), rand.nextInt(2) + 1);
+            if (rand.nextDouble() < 0.4) {
+                seedFlag(savedReview.getId(), ReviewFlagStatus.PENDING);
+            }
+        }
+
+        seedVotes(savedReview.getId(), rand.nextInt(5) + 2);
+    }
+
+    private void seedReview(String entityType, String entityId, String userName, String title,
+                           String description, int rating, int imageCount, int maxImages, Hotel hotel) {
+        seedReview(entityType, entityId, userName, title, description, rating, imageCount, maxImages, (Flight) null);
+    }
+
+    private void seedReplies(String reviewId, int replyCount) {
+        Random rand = new Random();
+        String[] staffReplies = {
+            "Thank you for your feedback! We're glad you enjoyed your experience.",
+            "We apologize for any inconvenience you experienced. Please contact us directly.",
+            "We're working hard to improve our services based on feedback like yours.",
+            "Thank you for choosing us. We appreciate your business!"
+        };
+
+        for (int i = 0; i < replyCount; i++) {
+            ReviewReply reply = new ReviewReply();
+            reply.setReviewId(reviewId);
+            reply.setUserEmail("support@makemytrip.com");
+            reply.setUserName("Support Team");
+            reply.setText(staffReplies[rand.nextInt(staffReplies.length)]);
+            reply.setCreatedAt(LocalDateTime.now().minusDays(rand.nextInt(10)).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            reviewReplyRepository.save(reply);
+        }
+    }
+
+    private void seedFlag(String reviewId, String status) {
+        Random rand = new Random();
+        ReviewFlag flag = new ReviewFlag();
+        flag.setReviewId(reviewId);
+        flag.setFlaggedByEmail("moderator@example.com");
+        flag.setReason("Inappropriate content");
+        flag.setStatus(status);
+        flag.setCreatedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        reviewFlagRepository.save(flag);
+    }
+
+    private void seedVotes(String reviewId, int helpfulVotes) {
+        Random rand = new Random();
+        Set<String> votedEmails = new HashSet<>();
+
+        for (int i = 0; i < helpfulVotes; i++) {
+            ReviewVote vote = new ReviewVote();
+            vote.setReviewId(reviewId);
+            vote.setUserEmail("user" + (i + 1) + "@example.com");
+            vote.setType(ReviewVoteType.HELPFUL);
+            vote.setCreatedAt(LocalDateTime.now().minusDays(rand.nextInt(10)).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            reviewVoteRepository.save(vote);
+        }
+
+        int notHelpfulCount = helpfulVotes / 3;
+        for (int i = 0; i < notHelpfulCount; i++) {
+            ReviewVote vote = new ReviewVote();
+            vote.setReviewId(reviewId);
+            vote.setUserEmail("negativeuser" + i + "@example.com");
+            vote.setType(ReviewVoteType.NOT_HELPFUL);
+            vote.setCreatedAt(LocalDateTime.now().minusDays(rand.nextInt(15)).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            reviewVoteRepository.save(vote);
+        }
     }
 }

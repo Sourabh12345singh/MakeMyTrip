@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getHotels } from "@/services/hotel";
 import { bookHotel } from "@/services/booking";
+import { reviewAPI } from "@/services/reviews";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Hotel as HotelIcon, MapPin, ShieldAlert, CheckCircle, Bed, Sparkles, Search } from "lucide-react";
+import { Hotel as HotelIcon, MapPin, ShieldAlert, CheckCircle, Bed, Sparkles, Search, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import RoomTypeGrid from "./RoomTypeGrid";
+import ReviewSection from "./ReviewSection";
 
 interface HotelData {
   id: string;
@@ -197,7 +199,7 @@ export default function HotelPage() {
 
       {/* Booking Dialog */}
       <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border border-slate-700 text-white">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-700 text-white">
           <DialogHeader>
             <DialogTitle className="text-white">Confirm Hotel Booking</DialogTitle>
           </DialogHeader>
@@ -261,6 +263,23 @@ export default function HotelPage() {
                 </DialogFooter>
               </div>
             )
+          )}
+
+          {/* Reviews Section */}
+          {selectedHotel && (
+            <div className="mt-8 border-t border-slate-700 pt-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-400" />
+                Reviews & Ratings
+              </h3>
+              <ReviewSection
+                entityType="Hotel"
+                entityId={selectedHotel.id}
+                entityName={selectedHotel.hotelName}
+                userEmail={user?.email || ""}
+                isAuthenticated={!!user}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>
