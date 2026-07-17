@@ -230,7 +230,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl text-white">
       <h1 className="text-3xl font-bold mb-6">Admin Control Panel</h1>
 
       <Tabs defaultValue="flights" className="w-full">
@@ -252,11 +252,11 @@ export default function AdminPage() {
             </Button>
           </div>
 
-          <Card>
+          <Card className="bg-slate-900/50 border-slate-700">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-700 font-bold border-b">
+                  <thead className="bg-slate-800/80 text-white font-bold border-b border-slate-700">
                     <tr>
                       <th className="p-4">Flight Name</th>
                       <th className="p-4">Route</th>
@@ -273,8 +273,8 @@ export default function AdminPage() {
                       <tr><td colSpan={6} className="text-center p-8 text-muted-foreground">No flights found.</td></tr>
                     ) : (
                       flights.map((flight) => (
-                        <tr key={flight.id} className="border-b hover:bg-slate-50">
-                          <td className="p-4 font-semibold">{flight.flightName}</td>
+                        <tr key={flight.id} className="border-b border-slate-700 hover:bg-slate-800/50">
+                          <td className="p-4 font-semibold text-white">{flight.flightName}</td>
                           <td className="p-4">{flight.from} → {flight.to}</td>
                           <td className="p-4 text-xs text-muted-foreground">{flight.departureTime} - {flight.arrivalTime}</td>
                           <td className="p-4 font-bold text-emerald-600">₹{flight.price}</td>
@@ -283,7 +283,7 @@ export default function AdminPage() {
                             <Button size="icon" variant="ghost" onClick={() => handleOpenFlightEdit(flight)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleFlightDelete(flight.id)}>
+                            <Button size="icon" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-900/30" onClick={() => handleFlightDelete(flight.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </td>
@@ -306,11 +306,11 @@ export default function AdminPage() {
             </Button>
           </div>
 
-          <Card>
+          <Card className="bg-slate-900/50 border-slate-700">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-700 font-bold border-b">
+                  <thead className="bg-slate-800/80 text-white font-bold border-b border-slate-700">
                     <tr>
                       <th className="p-4">Hotel Name</th>
                       <th className="p-4">Location</th>
@@ -327,8 +327,8 @@ export default function AdminPage() {
                       <tr><td colSpan={6} className="text-center p-8 text-muted-foreground">No hotels found.</td></tr>
                     ) : (
                       hotels.map((hotel) => (
-                        <tr key={hotel.id} className="border-b hover:bg-slate-50">
-                          <td className="p-4 font-semibold">{hotel.hotelName}</td>
+                        <tr key={hotel.id} className="border-b border-slate-700 hover:bg-slate-800/50">
+                          <td className="p-4 font-semibold text-white">{hotel.hotelName}</td>
                           <td className="p-4">{hotel.location}</td>
                           <td className="p-4 max-w-[200px] truncate text-xs text-muted-foreground">{hotel.amenities}</td>
                           <td className="p-4 font-bold text-emerald-600">₹{hotel.pricePerNight}</td>
@@ -337,7 +337,7 @@ export default function AdminPage() {
                             <Button size="icon" variant="ghost" onClick={() => handleOpenHotelEdit(hotel)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleHotelDelete(hotel.id)}>
+                            <Button size="icon" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-900/30" onClick={() => handleHotelDelete(hotel.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </td>
@@ -354,7 +354,7 @@ export default function AdminPage() {
 
       {/* Flight dialog form */}
       <Dialog open={isFlightDialogOpen} onOpenChange={setIsFlightDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 text-white border-slate-700">
           <DialogHeader>
             <DialogTitle>{editingFlight ? "Edit Flight details" : "Add New Flight"}</DialogTitle>
           </DialogHeader>
@@ -447,7 +447,7 @@ export default function AdminPage() {
 
       {/* Hotel dialog form */}
       <Dialog open={isHotelDialogOpen} onOpenChange={setIsHotelDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 text-white border-slate-700">
           <DialogHeader>
             <DialogTitle>{editingHotel ? "Edit Hotel details" : "Add New Hotel"}</DialogTitle>
           </DialogHeader>

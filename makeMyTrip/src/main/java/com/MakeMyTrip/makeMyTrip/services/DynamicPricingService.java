@@ -37,7 +37,7 @@ public class DynamicPricingService {
     // Absolute max price for the simulation
     private static final double MAX_PRICE = 200000.0;
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 300000) // Changed from 30s to 5 mins for lower latency
     public void updatePrices() {
         List<Flight> flights = flightRepository.findAll();
         int month = LocalDate.now().getMonthValue();

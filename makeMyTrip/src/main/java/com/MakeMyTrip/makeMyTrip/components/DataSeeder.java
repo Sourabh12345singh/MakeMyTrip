@@ -270,19 +270,31 @@ public class DataSeeder implements CommandLineRunner {
 
         String[] flagReasons = {"Inappropriate content", "Spam", "False information", "Hate speech", "Privacy violation"};
 
-        for (int i = 0; i < 20; i++) {
-            if (i % 2 == 0 && !flights.isEmpty()) {
-                Flight flight = flights.get(rand.nextInt(flights.size()));
-                seedReview("Flight", flight.getId(), userNames[rand.nextInt(userNames.length)],
-                    reviewTitles[rand.nextInt(reviewTitles.length)],
-                    reviewDescriptions[rand.nextInt(reviewDescriptions.length)],
-                    rand.nextInt(5) + 1, 0, 10, flight);
-            } else if (!hotels.isEmpty()) {
-                Hotel hotel = hotels.get(rand.nextInt(hotels.size()));
-                seedReview("Hotel", hotel.getId(), userNames[rand.nextInt(userNames.length)],
-                    reviewTitles[rand.nextInt(reviewTitles.length)],
-                    reviewDescriptions[rand.nextInt(reviewDescriptions.length)],
-                    rand.nextInt(5) + 1, 1, 15, hotel);
+        // Seed 3-5 reviews for EVERY flight
+        for (Flight flight : flights) {
+            long existingFlightReviews = reviewRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("Flight", flight.getId()).size();
+            if (existingFlightReviews == 0) {
+                int count = rand.nextInt(3) + 3; // 3 to 5 reviews
+                for (int i = 0; i < count; i++) {
+                    seedReview("Flight", flight.getId(), userNames[rand.nextInt(userNames.length)],
+                        reviewTitles[rand.nextInt(reviewTitles.length)],
+                        reviewDescriptions[rand.nextInt(reviewDescriptions.length)],
+                        rand.nextInt(5) + 1, rand.nextInt(2), 5, flight);
+                }
+            }
+        }
+
+        // Seed 3-5 reviews for EVERY hotel
+        for (Hotel hotel : hotels) {
+            long existingHotelReviews = reviewRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("Hotel", hotel.getId()).size();
+            if (existingHotelReviews == 0) {
+                int count = rand.nextInt(3) + 3; // 3 to 5 reviews
+                for (int i = 0; i < count; i++) {
+                    seedReview("Hotel", hotel.getId(), userNames[rand.nextInt(userNames.length)],
+                        reviewTitles[rand.nextInt(reviewTitles.length)],
+                        reviewDescriptions[rand.nextInt(reviewDescriptions.length)],
+                        rand.nextInt(5) + 1, rand.nextInt(2), 5, hotel);
+                }
             }
         }
     }

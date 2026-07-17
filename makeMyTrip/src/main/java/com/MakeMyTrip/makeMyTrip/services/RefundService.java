@@ -105,7 +105,7 @@ public class RefundService {
         return refund;
     }
 
-    @Scheduled(fixedRate = 15000)
+    @Scheduled(fixedRate = 60000) // Changed from 15s to 1 min for lower latency
     public void processRefunds() {
         List<Refund> pendings = refundRepository.findByStatus("PENDING");
         LocalDateTime now = LocalDateTime.now();
