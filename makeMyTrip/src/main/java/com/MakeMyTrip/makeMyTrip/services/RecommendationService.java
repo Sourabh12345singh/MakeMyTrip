@@ -69,10 +69,9 @@ public class RecommendationService {
         // === Strategy 4: Collaborative filtering ===
         allRecs.addAll(generateCollaborativeRecs(userEmail, bookings, bookedFlightIds, bookedHotelIds, categoryBoost));
 
-        // === Strategy 5: Popular destinations (fallback for new users) ===
-        if (allRecs.isEmpty()) {
-            allRecs.addAll(generatePopularRecs(userEmail, categoryBoost));
-        }
+        // === Strategy 5: Popular destinations (fallback and gap-filler) ===
+        // Always add popular recs so we have enough items. They have lower base scores so personalized ones win.
+        allRecs.addAll(generatePopularRecs(userEmail, categoryBoost));
 
         // De-duplicate by entityId, keeping highest score
         Map<String, Recommendation> deduped = new LinkedHashMap<>();
@@ -86,8 +85,31 @@ public class RecommendationService {
         List<Recommendation> finalRecs = new ArrayList<>(deduped.values());
         finalRecs.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
 
-        // Limit to top 20
-        if (finalRecs.size() > 20) finalRecs = finalRecs.subList(0, 20);
+        // Guarantee at least 2 flights and 2 hotels
+        List<Recommendation> guaranteedRecs = new ArrayList<>();
+        int flightCount = 0;
+        int hotelCount = 0;
+
+        // First pass: grab top 2 flights and top 2 hotels
+        for (Recommendation r : finalRecs) {
+            if ("Flight".equals(r.getEntityType()) && flightCount < 2) {
+                guaranteedRecs.add(r);
+                flightCount++;
+            } else if ("Hotel".equals(r.getEntityType()) && hotelCount < 2) {
+                guaranteedRecs.add(r);
+                hotelCount++;
+            }
+        }
+
+        // Second pass: fill the rest up to 20
+        for (Recommendation r : finalRecs) {
+            if (guaranteedRecs.size() >= 20) break;
+            if (!guaranteedRecs.contains(r)) {
+                guaranteedRecs.add(r);
+            }
+        }
+
+        finalRecs = guaranteedRecs;
 
         // Save all
         recommendationRepository.saveAll(finalRecs);

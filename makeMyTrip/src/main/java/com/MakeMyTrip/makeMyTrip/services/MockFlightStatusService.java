@@ -55,7 +55,7 @@ public class MockFlightStatusService {
     private final Map<String, Integer> flightStatusCounter = new ConcurrentHashMap<>();
     private final Map<String, String> flightCurrentGate = new ConcurrentHashMap<>();
 
-    @Scheduled(fixedRate = 60000) // Changed from 10s to 1 min for lower latency
+    @Scheduled(fixedRate = 5000) // Changed to 5s for fast demo experience
     public void simulateFlightUpdates() {
         List<TrackedFlight> trackedFlights = trackedFlightRepository.findAll();
 

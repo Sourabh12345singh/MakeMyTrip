@@ -217,9 +217,9 @@ export default function FlightPage() {
             return (
             <Card key={flight.id} className="bg-black/60 backdrop-blur-md border border-slate-700/40 hover:border-sky-500/40 transition-all duration-300 text-white shadow-xl hover:shadow-2xl">
               <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2">
                   <CardTitle className="text-xl font-bold text-white">{flight.flightName}</CardTitle>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <PriceFreezeButton
                       flightId={flight.id}
                       flightName={flight.flightName}
